@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading Creekside Blog</title>
+    <title>Loading Creekside</title>
     <style>
         body {
             margin: 0;
@@ -113,9 +113,63 @@
         // REPLACE THIS WITH YOUR ACTUAL CONTAINER APP URL
         const MAIN_APP_URL = 'https://creeksidecore.icyrock-5508d88e.eastus.azurecontainerapps.io';
         
-        let attempts = 0;
+                let attempts = 0;
         const maxAttempts = 60;
         let redirected = false;
         
         const statusMessages = [
-            "Initializing 
+            "Initializing services...",
+            "Starting database connections...",
+            "Loading authentication system...",
+            "Preparing blog content...",
+            "Warming up the application...",
+            "Almost ready..."
+        ];
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        function showManualLink() {
+            document.getElementById('manual-link').style.display = 'block';
+            document.getElementById('continue-link').href = MAIN_APP_URL;
+        }
+        
+        function checkMainApp() {
+            if (redirected) return;
+            
+            attempts++;
+            const messageIndex = Math.floor(attempts / 10) % statusMessages.length;
+            updateStatus(statusMessages[messageIndex] + ` (${attempts}/${maxAttempts})`);
+            
+            fetch(MAIN_APP_URL, { 
+                method: 'HEAD',
+                mode: 'no-cors',
+                cache: 'no-cache'
+            })
+                .then(() => {
+                    if (!redirected) {
+                        redirected = true;
+                        updateStatus('✅ Ready! Redirecting to Creekside...');
+                        setTimeout(() => {
+                            window.location.href = MAIN_APP_URL;
+                        }, 1500);
+                    }
+                })
+                .catch(() => {
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkMainApp, 500);
+                    } else if (!redirected) {
+                        updateStatus('Still starting up... You can continue manually.');
+                        showManualLink();
+                    }
+                });
+        }
+        
+        setTimeout(() => {
+            updateStatus('Checking server status...');
+            checkMainApp();
+        }, 2000);
+    </script>
+</body>
+</html>
