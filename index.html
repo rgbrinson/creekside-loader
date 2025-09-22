@@ -110,67 +110,66 @@
         </div>
     </div>
     
-    <script>
-        // REPLACE THIS WITH YOUR ACTUAL CONTAINER APP URL
-        const MAIN_APP_URL = 'https://app.creek-side.net';
+<script>
+    // Update your GitHub Pages index.html
+    const MAIN_APP_URL = 'https://app.creek-side.net';
+    
+    let attempts = 0;
+    const maxAttempts = 60;
+    let redirected = false;
+    
+    // Get current URL path to preserve it
+    const currentPath = window.location.pathname + window.location.search;
+    const finalUrl = currentPath === '/' ? MAIN_APP_URL : MAIN_APP_URL + currentPath;
+    
+    function updateStatus(message) {
+        document.getElementById('status').textContent = message;
+    }
+    
+    function showManualLink() {
+        document.getElementById('manual-link').style.display = 'block';
+        document.getElementById('continue-link').href = finalUrl;
+    }
+    
+    function checkMainApp() {
+        if (redirected) return;
         
-                let attempts = 0;
-        const maxAttempts = 60;
-        let redirected = false;
+        attempts++;
+        updateStatus(`Checking server... (${attempts}/${maxAttempts})`);
         
-        const statusMessages = [
-            "Initializing services...",
-            "Starting database connections...",
-            "Loading authentication system...",
-            "Preparing blog content...",
-            "Warming up the application...",
-            "Almost ready..."
-        ];
-        
-        function updateStatus(message) {
-            document.getElementById('status').textContent = message;
-        }
-        
-        function showManualLink() {
-            document.getElementById('manual-link').style.display = 'block';
-            document.getElementById('continue-link').href = MAIN_APP_URL;
-        }
-        
-        function checkMainApp() {
-            if (redirected) return;
-            
-            attempts++;
-            const messageIndex = Math.floor(attempts / 10) % statusMessages.length;
-            updateStatus(statusMessages[messageIndex] + ` (${attempts}/${maxAttempts})`);
-            
-            fetch(MAIN_APP_URL, { 
-                method: 'HEAD',
-                mode: 'no-cors',
-                cache: 'no-cache'
+        fetch(MAIN_APP_URL + '/health', { 
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-cache'
+        })
+            .then(() => {
+                if (!redirected) {
+                    redirected = true;
+                    updateStatus('✅ Ready! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = finalUrl; // Preserves the original path
+                    }, 1500);
+                }
             })
-                .then(() => {
-                    if (!redirected) {
-                        redirected = true;
-                        updateStatus('✅ Ready! Redirecting to Creekside...');
-                        setTimeout(() => {
-                            window.location.href = MAIN_APP_URL;
-                        }, 1500);
-                    }
-                })
-                .catch(() => {
-                    if (attempts < maxAttempts) {
-                        setTimeout(checkMainApp, 500);
-                    } else if (!redirected) {
-                        updateStatus('Still starting up... You can continue manually.');
-                        showManualLink();
-                    }
-                });
-        }
-        
-        setTimeout(() => {
-            updateStatus('Checking server status...');
-            checkMainApp();
-        }, 2000);
-    </script>
+            .catch(() => {
+                if (attempts < maxAttempts) {
+                    setTimeout(checkMainApp, 500);
+                } else if (!redirected) {
+                    updateStatus('Still starting up... You can continue manually.');
+                    showManualLink();
+                }
+            });
+    }
+    
+    // Show what URL we're going to redirect to
+    if (currentPath !== '/') {
+        document.getElementById('status').textContent = `Preparing ${currentPath}...`;
+    }
+    
+    setTimeout(() => {
+        updateStatus('Checking server status...');
+        checkMainApp();
+    }, 2000);
+</script>
 </body>
 </html>
