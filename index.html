@@ -111,14 +111,13 @@
     </div>
     
 <script>
-    // Update your GitHub Pages index.html
-    const MAIN_APP_URL = 'https://app.creek-side.net';
+    const MAIN_APP_URL = 'https://app.creek-side.net';  // Your Container App
     
     let attempts = 0;
     const maxAttempts = 60;
     let redirected = false;
     
-    // Get current URL path to preserve it
+    // Preserve the current path from the loading page URL
     const currentPath = window.location.pathname + window.location.search;
     const finalUrl = currentPath === '/' ? MAIN_APP_URL : MAIN_APP_URL + currentPath;
     
@@ -127,8 +126,17 @@
     }
     
     function showManualLink() {
-        document.getElementById('manual-link').style.display = 'block';
-        document.getElementById('continue-link').href = finalUrl;
+        if (!document.getElementById('manual-link')) {
+            const manualDiv = document.createElement('div');
+            manualDiv.id = 'manual-link';
+            manualDiv.innerHTML = `
+                <p style="margin-top: 20px;">Taking longer than expected?</p>
+                <a href="${finalUrl}" style="color: white; text-decoration: underline; font-weight: bold;">
+                    Continue to Creekside
+                </a>
+            `;
+            document.querySelector('.loading-container').appendChild(manualDiv);
+        }
     }
     
     function checkMainApp() {
@@ -137,7 +145,8 @@
         attempts++;
         updateStatus(`Checking server... (${attempts}/${maxAttempts})`);
         
-        fetch(MAIN_APP_URL + '/health', { 
+        // Check the Container App, not the current GitHub Pages site
+        fetch(MAIN_APP_URL, { 
             method: 'HEAD',
             mode: 'no-cors',
             cache: 'no-cache'
@@ -147,7 +156,7 @@
                     redirected = true;
                     updateStatus('✅ Ready! Redirecting...');
                     setTimeout(() => {
-                        window.location.href = finalUrl; // Preserves the original path
+                        window.location.href = finalUrl;
                     }, 1500);
                 }
             })
@@ -161,15 +170,17 @@
             });
     }
     
-    // Show what URL we're going to redirect to
+    // Show what path we're preserving
     if (currentPath !== '/') {
-        document.getElementById('status').textContent = `Preparing ${currentPath}...`;
+        updateStatus(`Preparing to load ${currentPath}...`);
     }
     
     setTimeout(() => {
         updateStatus('Checking server status...');
         checkMainApp();
     }, 2000);
+    
+    // Remove the old meta refresh since we're handling redirects with JavaScript
 </script>
 </body>
 </html>
