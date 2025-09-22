@@ -1,1 +1,186 @@
-<b>stuff goes here</b>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Creekside</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+        }
+        
+        .loading-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logo {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top: 6px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            width: 300px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: white;
+            width: 0%;
+            border-radius: 4px;
+            animation: fill 30s ease-out forwards;
+        }
+        
+        @keyframes fill {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+        
+        .status {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-top: 15px;
+            min-height: 20px;
+        }
+        
+        .manual-link {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .manual-link a {
+            color: white;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <div class="logo">🏞️ Creekside</div>
+        <div class="loading-text">Home of Plantation One HOA</div>
+        <div class="spinner"></div>
+        <div class="loading-text">Please wait while we prepare your experience...</div>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        <div class="status" id="status">Initializing services...</div>
+        <div class="manual-link" id="manual-link">
+            <p>Taking longer than expected?</p>
+            <a href="#" id="continue-link">Continue to Creekside</a>
+        </div>
+    </div>
+    
+<script>
+    const MAIN_APP_URL = 'https://app.creek-side.net';  // Your Container App
+    
+    let attempts = 0;
+    const maxAttempts = 60;
+    let redirected = false;
+    
+    // Preserve the current path from the loading page URL
+    const currentPath = window.location.pathname + window.location.search;
+    const finalUrl = currentPath === '/' ? MAIN_APP_URL : MAIN_APP_URL + currentPath;
+    
+    function updateStatus(message) {
+        document.getElementById('status').textContent = message;
+    }
+    
+    function showManualLink() {
+        if (!document.getElementById('manual-link')) {
+            const manualDiv = document.createElement('div');
+            manualDiv.id = 'manual-link';
+            manualDiv.innerHTML = `
+                <p style="margin-top: 20px;">Taking longer than expected?</p>
+                <a href="${finalUrl}" style="color: white; text-decoration: underline; font-weight: bold;">
+                    Continue to Creekside
+                </a>
+            `;
+            document.querySelector('.loading-container').appendChild(manualDiv);
+        }
+    }
+    
+    function checkMainApp() {
+        if (redirected) return;
+        
+        attempts++;
+        updateStatus(`Checking server... (${attempts}/${maxAttempts})`);
+        
+        // Check the Container App, not the current GitHub Pages site
+        fetch(MAIN_APP_URL, { 
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-cache'
+        })
+            .then(() => {
+                if (!redirected) {
+                    redirected = true;
+                    updateStatus('✅ Ready! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = finalUrl;
+                    }, 1500);
+                }
+            })
+            .catch(() => {
+                if (attempts < maxAttempts) {
+                    setTimeout(checkMainApp, 500);
+                } else if (!redirected) {
+                    updateStatus('Still starting up... You can continue manually.');
+                    showManualLink();
+                }
+            });
+    }
+    
+    // Show what path we're preserving
+    if (currentPath !== '/') {
+        updateStatus(`Preparing to load ${currentPath}...`);
+    }
+    
+    setTimeout(() => {
+        updateStatus('Checking server status...');
+        checkMainApp();
+    }, 2000);
+    
+    // Remove the old meta refresh since we're handling redirects with JavaScript
+</script>
+</body>
+</html>
